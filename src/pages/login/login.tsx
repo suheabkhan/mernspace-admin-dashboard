@@ -1,9 +1,9 @@
 import { Alert, Button, Card, Checkbox, Flex, Form, Input, Layout, Space } from "antd";
 import { LockFilled, UserOutlined, LockOutlined } from "@ant-design/icons";
 import Logo from "../../components/icons/Logo";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { UserLoginData } from "../../types";
-import { loginAPI } from "../../http/api";
+import { loginAPI, getSelfAPI } from "../../http/api";
 
 const loginUser = async (userData: UserLoginData) => {
   // server call logic
@@ -11,13 +11,31 @@ const loginUser = async (userData: UserLoginData) => {
   return data;
 };
 
+const getSelf = async () => {
+  // server call logic
+  const { data } = await getSelfAPI();
+  //console.log(data);
+  return data;
+};
+
 const LoginPage = () => {
+  //For get operations use, useQuery
+  const { data: selfData, refetch } = useQuery({
+    queryKey: ["self"],
+    queryFn: getSelf,
+    //This makes sure, wheenver the component is rendered, this doesnot get executed automatically
+    enabled: false,
+  });
   // mutate is a function , that we can use to invoke the mutationFunction
   // isPending is a boolean, which will be true untill we get the response
   const { mutate, isPending, isError, error } = useMutation({
     mutationKey: ["login"],
     mutationFn: loginUser,
     onSuccess: async () => {
+      //getSelf
+      refetch();
+      console.log("userdata", selfData);
+      //store in the state
       console.log("Login successful");
     },
   });
