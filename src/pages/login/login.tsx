@@ -4,6 +4,7 @@ import Logo from "../../components/icons/Logo";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { UserLoginData } from "../../types";
 import { loginAPI, getSelfAPI } from "../../http/api";
+import { useAuthStore } from "../../store";
 
 const loginUser = async (userData: UserLoginData) => {
   // server call logic
@@ -19,8 +20,11 @@ const getSelf = async () => {
 };
 
 const LoginPage = () => {
+  // import the functions of state from useAuthStore
+  const { setUser, logout } = useAuthStore();
+
   //For get operations use, useQuery
-  const { data: selfData, refetch } = useQuery({
+  const { data, refetch } = useQuery({
     queryKey: ["self"],
     queryFn: getSelf,
     //This makes sure, wheenver the component is rendered, this doesnot get executed automatically
@@ -33,10 +37,8 @@ const LoginPage = () => {
     mutationFn: loginUser,
     onSuccess: async () => {
       //getSelf
-      refetch();
-      console.log("userdata", selfData);
-      //store in the state
-      console.log("Login successful");
+      const selfDataPromise = await refetch();
+      setUser(selfDataPromise.data);
     },
   });
 
