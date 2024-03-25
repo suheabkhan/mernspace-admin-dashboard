@@ -3,8 +3,9 @@ import { LockFilled, UserOutlined, LockOutlined } from "@ant-design/icons";
 import Logo from "../../components/icons/Logo";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { UserLoginData } from "../../types";
-import { loginAPI, getSelfAPI } from "../../http/api";
+import { loginAPI, getSelfAPI, logoutAPI } from "../../http/api";
 import { useAuthStore } from "../../store";
+import { usePermission } from "../../hooks/usePermission";
 
 const loginUser = async (userData: UserLoginData) => {
   // server call logic
@@ -19,12 +20,18 @@ const getSelf = async () => {
   return data;
 };
 
+const logoutUser = async () => {
+  await logoutAPI();
+};
+
 const LoginPage = () => {
+  //import hook
+  const { isAllowed } = usePermission();
   // import the functions of state from useAuthStore
-  const { setUser, logout } = useAuthStore();
+  const { setUser, logout: logOutFromStore } = useAuthStore();
 
   //For get operations use, useQuery
-  const { data, refetch } = useQuery({
+  const { refetch } = useQuery({
     queryKey: ["self"],
     queryFn: getSelf,
     //This makes sure, wheenver the component is rendered, this doesnot get executed automatically
@@ -38,6 +45,20 @@ const LoginPage = () => {
     onSuccess: async () => {
       //getSelf
       const selfDataPromise = await refetch();
+
+      //logout or redirect to client UI
+      //window.location.href = "http://clientui/url"
+      // "admin","manager","customer"
+      // if (selfDataPromise.data.role === "customer") {
+      //   await logoutUser();
+      //   logOutFromStore();
+      //   return;
+      // }
+      if (!isAllowed(selfDataPromise.data.role)) {
+        await logoutUser();
+        logOutFromStore();
+        return;
+      }
       setUser(selfDataPromise.data);
     },
   });
